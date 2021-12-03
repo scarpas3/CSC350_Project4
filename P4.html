@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+#version 300 es
+
+in vec4 aPosition;
+in vec4 aNormal;
+uniform float usType;
+out vec3 N, L, E;
+out float sType2;
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
+uniform vec4 uLightPosition;
+uniform vec3 uEyePosition;
+
+void main()
+{
+
+    // check for directional light
+
+    if(uLightPosition.w == 0.0) L = normalize(uLightPosition.xyz);
+    else L = normalize( uLightPosition.xyz - aPosition.xyz );
+
+    E = normalize(uEyePosition - aPosition.xyz);
+    N = normalize(aNormal.xyz);
+
+    gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
+    sType2 = usType;
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+#version 300 es
+
+precision mediump float;
+
+uniform vec4 uAmbientProduct;
+uniform vec4 uDiffuseProduct;
+uniform vec4 uSpecularProduct;
+uniform float uShininess;
+in float sType2;
+in vec3 N, L, E;
+out vec4 fColor;
+
+void main()
+{
+    vec3 H = normalize( L + E );
+    vec4 ambient = uAmbientProduct;
+
+    float Kd = max( dot(L, N), 0.0 );
+    vec4  diffuse = Kd*uDiffuseProduct;
+
+    float Ks = pow( max(dot(N, H), 0.0), uShininess );
+    vec4  specular = Ks * uSpecularProduct;
+
+    if( dot(L, N) < 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
+
+    if(sType2 == 0.0){
+        fColor  = vec4( 0.0, 0.0, 1.0, 1.0 );
+    }
+    else{
+        fColor = ambient + diffuse +specular;
+        fColor.a = 1.0;
+    }
+}
+</script>
+<p> </p>
+<button id = "Button0">Increase R</button>
+<button id = "Button1">Decrease R</button>
+
+<p> </p>
+<button id = "Button2">Increase theta</button>
+<button id = "Button3">Decrease theta</button>
+<button id = "Button4">Increase phi</button>
+<button id = "Button5">Decrease phi</button>
+
+<p></p>
+
+<script type="text/javascript" src="../Common/initShaders.js"></script>
+<script type="text/javascript" src="../Common/MVnew.js"></script>
+<script type="text/javascript" src="P4.js"></script>
+
+<body>
+    <select id="Controls" size="3">
+        <option value="0">No Shading</option>
+        <option value="1">Phong Shading</option>
+        <option value="2">Textures + Phong Shading</option>
+    </select>
+<canvas id="gl-canvas" width="512" height="512">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+</body>
+</html>
