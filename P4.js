@@ -1,17 +1,15 @@
-"use strict";
+"use strict"
 
 var canvas;
 var gl;
 var program;
 
 var numTimesToSubdivide = 3;
-
+var image;
 var index = 0;
-
 var positionsArray = [];
 var normalsArray = [];
 var sType = 0.0;
-
 var near = -10;
 var far = 10;
 var radius = 1.5;
@@ -50,6 +48,19 @@ var nMatrix, nMatrixLoc;
 var eye;
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
+
+function configureTexture( imag ) {
+    texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB,
+         gl.RGB, gl.UNSIGNED_BYTE, imag);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
+                      gl.NEAREST_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    gl.uniform1i(gl.getUniformLocation(program, "uTexture"), 0);
+}
 
 function triangle(a, b, c) {
 
@@ -96,6 +107,7 @@ function tetrahedron(a, b, c, d, n) {
     divideTriangle(a, d, b, n);
     divideTriangle(a, c, d, n);
 }
+
 
 window.onload = function init() {
 
@@ -174,6 +186,10 @@ window.onload = function init() {
         normalLoc = gl.getAttribLocation(program, "aNormal");
         gl.vertexAttribPointer(normalLoc, 4, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(normalLoc); //senidng normals over
+        if(sType == 2.0){
+            image = document.getElementById("texImage");
+            configureTexture(image);
+        }
     };
 
 
@@ -187,7 +203,6 @@ window.onload = function init() {
        "uLightPosition"),flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program,
        "uShininess"),materialShininess);
-        this.console.log(index);
     render();
 }
 
@@ -213,7 +228,7 @@ function render() {
     gl.uniform1f( gl.getUniformLocation(program,"usType"),sType );
 
     for( var i=0; i<index; i+=3)
-        gl.drawArrays( gl.TRIANGLES, i, 3 );
+        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Earth is 768 vertices
 
     requestAnimationFrame(render);
 }
