@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <script id="vertex-shader" type="x-shader/x-vertex">
 #version 300 es
 
@@ -42,6 +43,9 @@ precision mediump float;
 uniform vec4 uAmbientProduct;
 uniform vec4 uDiffuseProduct;
 uniform vec4 uSpecularProduct;
+uniform vec4 ulightAmbient;
+uniform vec4 ulightSpecular;
+uniform vec4 ulightDiffuse;
 uniform float uShininess;
 uniform sampler2D uTextureMap;
 in float sType2;
@@ -63,6 +67,21 @@ void main()
 
     if( dot(L, N) < 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
 
+    //
+    //
+
+    H = normalize( L + E );
+    vec4 ambient2 = ulightAmbient;
+
+    Kd = max( dot(L, N), 0.0 );
+    vec4  diffuse2 = Kd*ulightDiffuse;
+
+    Ks = pow( max(dot(N, H), 0.0), uShininess );
+    vec4  specular2 = Ks * ulightSpecular;
+
+    if( dot(L, N) < 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
+    if( dot(L, N) < 0.0 ) specular2 = vec4(0.0, 0.0, 0.0, 1.0);
+
     if(sType2 == 0.0){
         fColor  = vec4( 0.0, 0.0, 1.0, 1.0 );
     }
@@ -71,7 +90,7 @@ void main()
         fColor.a = 1.0;
     }
     else{
-        fColor = texture(uTextureMap, vec2(s, t));
+        fColor = texture(uTextureMap, vec2(s, t)) * (ambient2 + diffuse2 + specular2);
         fColor.a = 1.0;
     }
     
