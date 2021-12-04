@@ -1,5 +1,3 @@
-
-
 var canvas;
 var gl;
 var program;
@@ -27,6 +25,12 @@ var vb = vec4(0.0, 0.942809, 0.333333, 1);
 var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
 var vd = vec4(0.816497, -0.471405, 0.333333,1);
 
+var earthX = (va[0] + vb[0] + vc[0], + vd[0]) / 4;
+var earthY = (va[1] + vb[1] + vc[1], + vd[1]) / 4;
+var earthZ = (va[2] + vb[2] + vc[2], + vd[2]) / 4;
+
+var earthOrigin;
+
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
@@ -46,8 +50,46 @@ var modelViewMatrixLoc, projectionMatrixLoc;
 var nMatrix, nMatrixLoc;
 
 var eye;
-var at = vec3(0.0, 0.0, 0.0);
+var at;
 var up = vec3(0.0, 1.0, 0.0);
+
+function circumcenter() {
+    var ba_x = vb[0] - va[0];
+    var ba_y = vb[1] - va[1];
+    var ba_z = vb[2] - va[2];
+    
+    var ca_x = vc[0] - va[0];
+    var ca_y = vc[1] - va[1];
+    var ca_z = vc[2] - va[2];
+    
+    var da_x = vd[0] - va[0];
+    var da_y = vd[1] - va[1];
+    var da_z = vd[2] - va[2];
+
+    var len_ba = Math.pow(ba_x, 2) + Math.pow(ba_y, 2) + Math.pow(ba_z, 2);
+    var len_ca = Math.pow(ca_x, 2) + Math.pow(ca_y, 2) + Math.pow(ca_z, 2);
+    var len_da = Math.pow(da_x, 2) + Math.pow(da_y, 2) + Math.pow(da_z, 2);
+
+    var crs_cdx = ca_y * da_z - da_y * ca_z;
+    var crs_cdy = ca_z * da_z - da_z * ca_x;
+    var crs_cdz = ca_x * da_y - da_x * ca_y;
+
+    var crs_dbx = da_y * ba_z - ba_y * da_z;
+    var crs_dby = da_z * ba_z - ba_z * da_x;
+    var crs_dbz = da_x * ba_y - ba_x * da_y;
+
+    var crs_bcx = ba_y * ca_z - ca_y * ba_z;
+    var crs_bcy = ba_z * ca_z - ca_z * ba_x;
+    var crs_bcz = ba_x * ca_y - ca_x * ba_y;
+
+    var den = 0.5 / (ba_x * crs_cdx + ba_y * crs_cdy + ba_z * crs_cdz);
+
+    var cir_x = (len_ba * crs_cdx + len_ca * crs_dbx + len_da * crs_bcx) * den;
+    var cir_y = (len_ba * crs_cdy + len_ca * crs_dby + len_da * crs_bcy) * den;
+    var cir_z = (len_ba * crs_cdz + len_ca * crs_dbz + len_da * crs_bcz) * den;
+
+    earthOrigin = vec4(cir_x, cir_y, cir_z, 1);
+}
 
 function configureTexture( imag ) {
     texture = gl.createTexture();
@@ -63,7 +105,6 @@ function configureTexture( imag ) {
 }
 
 function triangle(a, b, c) {
-
      positionsArray.push(a);
      positionsArray.push(b);
      positionsArray.push(c);
@@ -110,12 +151,10 @@ function tetrahedron(a, b, c, d, n) {
 
 
 window.onload = function init() {
-
     canvas = document.getElementById("gl-canvas");
 
     gl = canvas.getContext('webgl2');
     if (!gl) alert("WebGL 2.0 isn't available");
-
 
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
@@ -133,8 +172,9 @@ window.onload = function init() {
     var diffuseProduct = mult(lightDiffuse, materialDiffuse);
     var specularProduct = mult(lightSpecular, materialSpecular);
 
-
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
+    circumcenter();
+    at = vec3(earthOrigin[0], earthOrigin[1], earthOrigin[2]);
 
     var nBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
@@ -178,8 +218,8 @@ window.onload = function init() {
             sType = 2.0;
             break;
        }
+
        normalsArray = [];
-       tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
        nBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
@@ -208,20 +248,17 @@ window.onload = function init() {
 
 
 function render() {
-
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    eye = vec3(radius*Math.sin(theta)*Math.cos(phi),
-        radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
+    eye = vec3(radius*Math.sin(theta)*Math.cos(phi), radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
 
     modelViewMatrix = lookAt(eye, at , up);
     projectionMatrix = ortho(left, right, bottom, ytop, near, far);
 
-    nMatrix =normalMatrix(modelViewMatrix, true );
+    nMatrix = normalMatrix(modelViewMatrix, true );
 
-    gl.uniform3fv( gl.getUniformLocation(program,
-        "uEyePosition"), eye );
-
+    gl.uniform3fv( gl.getUniformLocation(program, "uEyePosition"), eye );
+    
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
     gl.uniformMatrix3fv(nMatrixLoc, false, flatten(nMatrix) );
