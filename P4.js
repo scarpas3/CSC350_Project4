@@ -174,7 +174,7 @@ window.onload = function init() {
 
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
     circumcenter();
-    at = vec3(earthOrigin[0], earthOrigin[1], earthOrigin[2]);
+    at = vec3(0, 0, 0);
 
     var nBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
