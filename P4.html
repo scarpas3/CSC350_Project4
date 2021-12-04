@@ -10,6 +10,7 @@ out vec3 N, L, E;
 out float sType2;
 uniform mat4 uModelViewMatrix;
 uniform mat4 uProjectionMatrix;
+uniform mat4 uCtm;
 uniform vec4 uLightPosition;
 uniform vec3 uEyePosition;
 out float s, t;
@@ -29,7 +30,7 @@ void main()
     E = normalize(uEyePosition - aPosition.xyz);
     N = normalize(aNormal.xyz);
 
-    gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
+    gl_Position = uProjectionMatrix * uModelViewMatrix * uCtm * aPosition;
     sType2 = usType;
 }
 </script>

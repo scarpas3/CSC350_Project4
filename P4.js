@@ -30,6 +30,9 @@ var earthY = (va[1] + vb[1] + vc[1], + vd[1]) / 4;
 var earthZ = (va[2] + vb[2] + vc[2], + vd[2]) / 4;
 
 var earthOrigin;
+var earthDia;
+var earthRad;
+var moonPos;
 
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
@@ -49,46 +52,17 @@ var modelViewMatrixLoc, projectionMatrixLoc;
 
 var nMatrix, nMatrixLoc;
 
+var ctmLoc;
+
 var eye;
-var at;
+var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
 
-function circumcenter() {
-    var ba_x = vb[0] - va[0];
-    var ba_y = vb[1] - va[1];
-    var ba_z = vb[2] - va[2];
-    
-    var ca_x = vc[0] - va[0];
-    var ca_y = vc[1] - va[1];
-    var ca_z = vc[2] - va[2];
-    
-    var da_x = vd[0] - va[0];
-    var da_y = vd[1] - va[1];
-    var da_z = vd[2] - va[2];
-
-    var len_ba = Math.pow(ba_x, 2) + Math.pow(ba_y, 2) + Math.pow(ba_z, 2);
-    var len_ca = Math.pow(ca_x, 2) + Math.pow(ca_y, 2) + Math.pow(ca_z, 2);
-    var len_da = Math.pow(da_x, 2) + Math.pow(da_y, 2) + Math.pow(da_z, 2);
-
-    var crs_cdx = ca_y * da_z - da_y * ca_z;
-    var crs_cdy = ca_z * da_z - da_z * ca_x;
-    var crs_cdz = ca_x * da_y - da_x * ca_y;
-
-    var crs_dbx = da_y * ba_z - ba_y * da_z;
-    var crs_dby = da_z * ba_z - ba_z * da_x;
-    var crs_dbz = da_x * ba_y - ba_x * da_y;
-
-    var crs_bcx = ba_y * ca_z - ca_y * ba_z;
-    var crs_bcy = ba_z * ca_z - ca_z * ba_x;
-    var crs_bcz = ba_x * ca_y - ca_x * ba_y;
-
-    var den = 0.5 / (ba_x * crs_cdx + ba_y * crs_cdy + ba_z * crs_cdz);
-
-    var cir_x = (len_ba * crs_cdx + len_ca * crs_dbx + len_da * crs_bcx) * den;
-    var cir_y = (len_ba * crs_cdy + len_ca * crs_dby + len_da * crs_bcy) * den;
-    var cir_z = (len_ba * crs_cdz + len_ca * crs_dbz + len_da * crs_bcz) * den;
-
-    earthOrigin = vec4(cir_x, cir_y, cir_z, 1);
+function centroid() {
+    var ex = (va[0] + vb[0] + vc[0] + vd[0])/4;
+    var ey = (va[1] + vb[1] + vc[1] + vd[1])/4;
+    var ez = (va[2] + vb[2] + vc[2] + vd[2])/4;
+    earthOrigin = vec4(ex, ey, ez, 1);
 }
 
 function configureTexture( imag ) {
@@ -167,14 +141,16 @@ window.onload = function init() {
     program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
 
-
     var ambientProduct = mult(lightAmbient, materialAmbient);
     var diffuseProduct = mult(lightDiffuse, materialDiffuse);
     var specularProduct = mult(lightSpecular, materialSpecular);
 
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
-    circumcenter();
-    at = vec3(0, 0, 0);
+    centroid();
+    at = vec3(earthOrigin[0], earthOrigin[1], earthOrigin[2]);
+    earthRad = Math.sqrt(Math.pow((va[0] - earthOrigin[0]), 2) + Math.pow((va[1] - earthOrigin[1]), 2) + Math.pow((va[2] - earthOrigin[2]), 2));
+    earthDia = 2 * earthRad;
+    moonPos = vec3(earthOrigin[0] + (earthDia * 4), earthOrigin[1], earthOrigin[2] + (earthDia * 4));
 
     var nBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
@@ -183,7 +159,6 @@ window.onload = function init() {
     var normalLoc = gl.getAttribLocation(program, "aNormal");
     gl.vertexAttribPointer(normalLoc, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray( normalLoc);
-
 
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -196,6 +171,7 @@ window.onload = function init() {
     modelViewMatrixLoc = gl.getUniformLocation(program, "uModelViewMatrix");
     projectionMatrixLoc = gl.getUniformLocation(program, "uProjectionMatrix");
     nMatrixLoc = gl.getUniformLocation(program, "uNormalMatrix");
+    ctmLoc = gl.getUniformLocation(program, "uCtm");
 
     document.getElementById("Button0").onclick = function(){radius *= 2.0;};
     document.getElementById("Button1").onclick = function(){radius *= 0.5;};
@@ -259,13 +235,25 @@ function render() {
 
     gl.uniform3fv( gl.getUniformLocation(program, "uEyePosition"), eye );
     
+    ctm = mat4();
+   
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
     gl.uniformMatrix3fv(nMatrixLoc, false, flatten(nMatrix) );
+    gl.uniformMatrix4fv(ctmLoc, false, flatten(ctm));
     gl.uniform1f( gl.getUniformLocation(program,"usType"),sType );
 
     for( var i=0; i<index; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 ); //Earth is 768 vertices
-
+ 
+    ctm = mat4();
+    ctm = mult(ctm, scale(0.25, 0.25, 0.25));
+    ctm = mult(ctm, translate(moonPos[0], moonPos[1], moonPos[2]));
+    
+    gl.uniformMatrix4fv(ctmLoc, false, flatten(ctm));
+    
+    for( var i=0; i<index; i+=3)
+        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Earth is 768 vertices
+    
     requestAnimationFrame(render);
 }
