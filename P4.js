@@ -1,5 +1,3 @@
-
-
 var canvas;
 var gl;
 var program;
@@ -201,6 +199,12 @@ window.onload = function init() {
        "uSpecularProduct"),flatten(specularProduct));
     gl.uniform4fv(gl.getUniformLocation(program,
        "uLightPosition"),flatten(lightPosition));
+    gl.uniform4fv(gl.getUniformLocation(program,
+        "ulightSpecular"),flatten(lightSpecular));
+    gl.uniform4fv(gl.getUniformLocation(program,
+        "ulightAmbient"),flatten(lightAmbient));
+    gl.uniform4fv(gl.getUniformLocation(program,
+        "ulightDiffuse"),flatten(lightDiffuse));
     gl.uniform1f(gl.getUniformLocation(program,
        "uShininess"),materialShininess);
     render();
