@@ -14,8 +14,7 @@ uniform mat4 uCtm;
 uniform vec4 uLightPosition;
 uniform vec3 uEyePosition;
 out float s, t;
-void main()
-{
+void main() {
 
     // check for directional light
 
@@ -50,9 +49,7 @@ in vec3 N, L, E;
 in float s, t;
 out vec4 fColor;
 
-void main()
-{
-    
+void main() {
     vec3 H = normalize( L + E );
     vec4 ambient = uAmbientProduct;
 
@@ -65,7 +62,7 @@ void main()
     if( dot(L, N) < 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
 
     if(sType2 == 0.0){
-        fColor  = vec4( 0.0, 0.0, 1.0, 1.0 );
+        fColor = vec4( 0.0, 0.0, 1.0, 1.0 );
     }
     else if (sType2 == 1.0){
         fColor = ambient + diffuse +specular;

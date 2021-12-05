@@ -6,6 +6,7 @@ var numTimesToSubdivide = 3;
 var image;
 var index = 0;
 var positionsArray = [];
+var colorsArray = [];
 var normalsArray = [];
 var sType = 0.0;
 var near = -10;
@@ -29,10 +30,9 @@ var earthX = (va[0] + vb[0] + vc[0], + vd[0]) / 4;
 var earthY = (va[1] + vb[1] + vc[1], + vd[1]) / 4;
 var earthZ = (va[2] + vb[2] + vc[2], + vd[2]) / 4;
 
-var earthOrigin;
 var earthDia;
 var earthRad;
-var moonPos;
+var moonRad;
 
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
@@ -54,15 +54,19 @@ var nMatrix, nMatrixLoc;
 
 var ctmLoc;
 
+var colorEarth = vec3(0.0, 0.0, 0.8);
+
 var eye;
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
 
-function centroid() {
-    var ex = (va[0] + vb[0] + vc[0] + vd[0])/4;
-    var ey = (va[1] + vb[1] + vc[1] + vd[1])/4;
-    var ez = (va[2] + vb[2] + vc[2] + vd[2])/4;
-    earthOrigin = vec4(ex, ey, ez, 1);
+function planetDiameter(a, b, c) {
+    var t1 = subtract(b, a);
+    var t2 = subtract(c, a);
+    var norm = normalize(cross(t2, t1));
+    
+    earthRad = Math.sqrt(Math.pow(norm[0], 2) + Math.pow(norm[1], 2) + Math.pow(norm[2], 2));
+    earthDia = 2*earthRad;
 }
 
 function configureTexture( imag ) {
@@ -79,18 +83,18 @@ function configureTexture( imag ) {
 }
 
 function triangle(a, b, c) {
-     positionsArray.push(a);
-     positionsArray.push(b);
-     positionsArray.push(c);
+    positionsArray.push(a);
+    positionsArray.push(b);
+    positionsArray.push(c);
+    
+    // normals are vectors
 
-          // normals are vectors
-
-     normalsArray.push(vec4(a[0],a[1], a[2], 0.0));
-     normalsArray.push(vec4(b[0],b[1], b[2], 0.0));
-     normalsArray.push(vec4(c[0],c[1], c[2], 0.0));
+    normalsArray.push(vec4(a[0],a[1], a[2], 0.0));
+    normalsArray.push(vec4(b[0],b[1], b[2], 0.0));
+    normalsArray.push(vec4(c[0],c[1], c[2], 0.0));
 
 
-     index += 3;
+    index += 3;
 }
 
 
@@ -134,7 +138,7 @@ window.onload = function init() {
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
     gl.enable(gl.DEPTH_TEST);
-
+    
     //
     //  Load shaders and initialize attribute buffers
     //
@@ -146,11 +150,10 @@ window.onload = function init() {
     var specularProduct = mult(lightSpecular, materialSpecular);
 
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
-    centroid();
-    at = vec3(earthOrigin[0], earthOrigin[1], earthOrigin[2]);
-    earthRad = Math.sqrt(Math.pow((va[0] - earthOrigin[0]), 2) + Math.pow((va[1] - earthOrigin[1]), 2) + Math.pow((va[2] - earthOrigin[2]), 2));
-    earthDia = 2 * earthRad;
-    moonPos = vec3(earthOrigin[0] + (earthDia * 4), earthOrigin[1], earthOrigin[2] + (earthDia * 4));
+
+    planetDiameter(va, vb, vc);
+    moonRad = earthDia * 4;
+    console.log(moonRad);
 
     var nBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
@@ -158,7 +161,7 @@ window.onload = function init() {
 
     var normalLoc = gl.getAttribLocation(program, "aNormal");
     gl.vertexAttribPointer(normalLoc, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray( normalLoc);
+    gl.enableVertexAttribArray(normalLoc);
 
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -248,7 +251,7 @@ function render() {
  
     ctm = mat4();
     ctm = mult(ctm, scale(0.25, 0.25, 0.25));
-    ctm = mult(ctm, translate(moonPos[0], moonPos[1], moonPos[2]));
+    ctm = mult(ctm, translate(moonRad, 0, moonRad));
     
     gl.uniformMatrix4fv(ctmLoc, false, flatten(ctm));
     
