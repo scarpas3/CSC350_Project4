@@ -8,12 +8,12 @@ var index = 0;
 var positionsArray = [];
 var colorsArray = [];
 var normalsArray = [];
-var sType = 0.0;
+var sType = 1.0;
 var near = -10;
 var far = 10;
 var radius = 1.5;
-var theta  = 0.0;
-var phi    = 0.0;
+var theta = 0.0;
+var phi = 0.0;
 var dr = 15.0 * Math.PI/180.0;
 
 var left = -3.0;
@@ -32,7 +32,11 @@ var earthZ = (va[2] + vb[2] + vc[2], + vd[2]) / 4;
 
 var earthDia;
 var earthRad;
+var earthTheta = 0.0;
+var earchPhi = 0.0;
 var moonRad;
+var moonTheta = 0.0;
+var moonPhi = 0.0;
 
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
@@ -92,7 +96,6 @@ function triangle(a, b, c) {
     normalsArray.push(vec4(a[0],a[1], a[2], 0.0));
     normalsArray.push(vec4(b[0],b[1], b[2], 0.0));
     normalsArray.push(vec4(c[0],c[1], c[2], 0.0));
-
 
     index += 3;
 }
@@ -228,6 +231,11 @@ window.onload = function init() {
 
 function render() {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+   
+    earthTheta += 15.0 * Math.PI/180.0;
+    console.log("earth: " + earthTheta);
+    moonTheta += 0.75 * Math.PI/180.0;
+    console.log("moon: " + moonTheta);
 
     eye = vec3(radius*Math.sin(theta)*Math.cos(phi), radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
 
@@ -239,6 +247,7 @@ function render() {
     gl.uniform3fv( gl.getUniformLocation(program, "uEyePosition"), eye );
     
     ctm = mat4();
+    ctm = mult(ctm, rotateY(earthTheta));
    
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
@@ -251,6 +260,7 @@ function render() {
  
     ctm = mat4();
     ctm = mult(ctm, scale(0.25, 0.25, 0.25));
+    ctm = mult(ctm, rotateY(moonTheta));
     ctm = mult(ctm, translate(moonRad, 0, moonRad));
     
     gl.uniformMatrix4fv(ctmLoc, false, flatten(ctm));
