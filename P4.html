@@ -12,6 +12,8 @@ uniform mat4 uModelViewMatrix;
 uniform mat4 uProjectionMatrix;
 uniform vec4 uLightPosition;
 uniform vec3 uEyePosition;
+vec4 aPos;
+vec4 aNorm;
 out float s, t;
 void main() {
 
@@ -19,14 +21,17 @@ void main() {
 
     float pi = acos(0.0);
 
+    aPos = uModelViewMatrix * aPosition;
+    
     s = 0.5*acos(aPosition.x)/pi;
     t = 0.5 - 0.5*asin(aPosition.y/sqrt(1.0-aPosition.x*aPosition.x))/pi;
 
-    if(uLightPosition.w == 0.0) L = normalize(uLightPosition.xyz);
-    else L = normalize( uLightPosition.xyz - aPosition.xyz );
+    L = normalize( uLightPosition.xyz - aPos.xyz );
 
     E = normalize(uEyePosition - aPosition.xyz);
-    N = normalize(aNormal.xyz);
+
+    aNorm = uModelViewMatrix * aNormal;
+    N = normalize(aNorm.xyz);
 
     gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
     sType2 = usType;

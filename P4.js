@@ -1,3 +1,14 @@
+/* To fix the light thing:
+    * the sphere is being transformed by modelViewMatrix
+    * the eye and light are not moving
+    * the thing that is moving is the aPosition
+    * the normal also has to be multiplied by the modelViewMatrix
+    * before doing lightPosition - aPosition do aPosition = modelViewMatrix * aPosition
+    * before setting N do aNormal = modelViewMatrix * aNormal
+*/
+
+// TODO ask salgian about the light moving with the camera; explain earthView and moonView
+
 var canvas;
 var gl;
 var program;
