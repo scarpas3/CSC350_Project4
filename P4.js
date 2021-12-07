@@ -5,7 +5,7 @@ var program;
 var earthImg;
 var moonImg;
 
-var numTimesToSubdivide = 3;
+var numTimesToSubdivide = 4;
 var image;
 var index = 0;
 var positionsArray = [];
@@ -14,7 +14,7 @@ var normalsArray = [];
 var sType = 1.0;
 var near = -40;
 var far = 40;
-var radius = 1.5;
+var radius = 16;
 var theta = 0.0;
 var phi = 0.0;
 var dr = 15.0 * Math.PI/180.0;
@@ -66,22 +66,9 @@ var modelViewMatrixLoc, projectionMatrixLoc;
 
 var nMatrix, nMatrixLoc;
 
-var colorEarth = vec3(0.0, 0.0, 0.8);
-
 var eye = vec3(0.0, 0.0, 1.5);
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
-
-function configureTexture( imag ) {
-    texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, imag);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-    gl.uniform1i(gl.getUniformLocation(program, "uTexture"), 0);
-}
 
 function triangle(a, b, c) {
     positionsArray.push(a);
@@ -134,7 +121,6 @@ function triangle2(a, b, c) {
     positionsArray.push(b);
     positionsArray.push(c);
     
-    // normals are vectors
 
     normalsArray.push(vec4(a[0],a[1], a[2], 0.0));
     normalsArray.push(vec4(b[0],b[1], b[2], 0.0));
@@ -315,7 +301,7 @@ function render() {
     }
 
     for(var i=0; i<index; i+=3)
-        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Earth is 768 vertices
+        gl.drawArrays( gl.TRIANGLES, i, 3 );
  
     ctm = mat4();
     ctm = mult(ctm, scale(0.25, 0.25, 0.25));
@@ -341,8 +327,8 @@ function render() {
         gl.uniform1f(gl.getUniformLocation(program, "uShininess"),materialShininess);
     }
 
-    for(var i=768; i<1536; i+=3)
-        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Moon is 768 vertices
+    for(var i=index; i<index*2; i+=3)
+        gl.drawArrays( gl.TRIANGLES, i, 3 ); 
     
     requestAnimationFrame(render);
 }
