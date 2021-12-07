@@ -1,17 +1,17 @@
-/* To fix the light thing:
-    * the sphere is being transformed by modelViewMatrix
-    * the eye and light are not moving
-    * the thing that is moving is the aPosition
-    * the normal also has to be multiplied by the modelViewMatrix
-    * before doing lightPosition - aPosition do aPosition = modelViewMatrix * aPosition
-    * before setting N do aNormal = modelViewMatrix * aNormal
+/*
+    * TODO
+    * fix the lightting so that there is no material color when texutre active
+    * make sure that the camera and light are positioned correctly
+    * add the ability to change camera position
+    * see if able to remove lines 218-225
 */
-
-// TODO ask salgian about the light moving with the camera; explain earthView and moonView
 
 var canvas;
 var gl;
 var program;
+
+var earthImg;
+var moonImg;
 
 var numTimesToSubdivide = 3;
 var image;
@@ -85,11 +85,9 @@ function planetDiameter(a, b, c) {
 function configureTexture( imag ) {
     texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB,
-         gl.RGB, gl.UNSIGNED_BYTE, imag);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, imag);
     gl.generateMipmap(gl.TEXTURE_2D);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
-                      gl.NEAREST_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
     gl.uniform1i(gl.getUniformLocation(program, "uTexture"), 0);
@@ -193,6 +191,15 @@ window.onload = function init() {
     document.getElementById("Button4").onclick = function(){phi += dr;};
     document.getElementById("Button5").onclick = function(){phi -= dr;};
 
+    // Texture stuff
+    earthImg = document.getElementById("earthImg");
+    moonImg = document.getElementById("moonImg");
+
+    texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    // Controlls
     document.getElementById("Controls").onclick = function(event) {
         switch(event.target.index) {
           case 0:
@@ -208,17 +215,14 @@ window.onload = function init() {
             break;
         }
 
-        normalsArray = [];
+        // What is this for?
+        /*normalsArray = [];
         nBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
         normalLoc = gl.getAttribLocation(program, "aNormal");
         gl.vertexAttribPointer(normalLoc, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(normalLoc); //senidng normals over
-        if(sType == 2.0){
-            jiimage = document.getElementById("texImage");
-            configureTexture(image);
-        }
+        gl.enableVertexAttribArray(normalLoc);*/ //senidng normals over
     };
 
     gl.uniform4fv(gl.getUniformLocation(program, "uAmbientProduct"),flatten(ambientProduct));
@@ -235,7 +239,7 @@ function render() {
     earthTheta += 15.0 * Math.PI/180.0;
     moonTheta += 0.75 * Math.PI/180.0;
     
-    eye = vec3(radius*Math.sin(theta)*Math.cos(phi), radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
+    //eye = vec3(radius*Math.sin(theta)*Math.cos(phi), radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
     
     modelViewMatrix = lookAt(eye, at, up);
     projectionMatrix = ortho(left, right, bottom, ytop, near, far);
@@ -249,7 +253,16 @@ function render() {
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(earthView));
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
     gl.uniform1f( gl.getUniformLocation(program,"usType"),sType );
-    
+  
+    // Set earth image
+    if (sType == 2) {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, earthImg);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.uniform1i(gl.getUniformLocation(program, "uTexture"), 0);
+    }
+
     for(var i=0; i<index; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 ); //Earth is 768 vertices
  
@@ -261,6 +274,15 @@ function render() {
     
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(moonView));
     
+    // Set moon image
+    if (sType == 2) {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, moonImg);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.uniform1i(gl.getUniformLocation(program, "uTexture"), 0);
+    }
+
     for(var i=0; i<index; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 ); //Moon is 768 vertices
     

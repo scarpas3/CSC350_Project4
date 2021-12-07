@@ -73,7 +73,7 @@ void main() {
         fColor.a = 1.0;
     }
     else{
-        fColor = texture(uTextureMap, vec2(s, t));
+        fColor = ambient + diffuse + specular + texture(uTextureMap, vec2(s, t));
         fColor.a = 1.0;
     }
     
@@ -104,6 +104,7 @@ void main() {
 <canvas id="gl-canvas" width="512" height="512">
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
-<img id = "texImage" src = "earth.png" crossorigin = "anonymous" hidden></img>
+<img id = "earthImg" src = "earth.png" crossorigin = "anonymous" hidden></img>
+<img id = "moonImg" src = "moon.png" crossorigin = "anonymous" hidden></img>
 </body>
 </html>
