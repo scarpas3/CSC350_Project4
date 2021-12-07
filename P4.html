@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <script id="vertex-shader" type="x-shader/x-vertex">
 #version 300 es
 
@@ -13,25 +12,32 @@ uniform mat4 uModelViewMatrix;
 uniform mat4 uProjectionMatrix;
 uniform vec4 uLightPosition;
 uniform vec3 uEyePosition;
+vec4 aPos;
+vec4 aNorm;
 out float s, t;
-void main()
-{
+in vec4 vColor;
+out vec4 color;
+void main() {
 
     // check for directional light
 
     float pi = acos(0.0);
 
+    aPos = uModelViewMatrix * aPosition;
+    
     s = 0.5*acos(aPosition.x)/pi;
     t = 0.5 - 0.5*asin(aPosition.y/sqrt(1.0-aPosition.x*aPosition.x))/pi;
 
-    if(uLightPosition.w == 0.0) L = normalize(uLightPosition.xyz);
-    else L = normalize( uLightPosition.xyz - aPosition.xyz );
+    L = normalize( uLightPosition.xyz - aPos.xyz );
 
     E = normalize(uEyePosition - aPosition.xyz);
-    N = normalize(aNormal.xyz);
+
+    aNorm = uModelViewMatrix * aNormal;
+    N = normalize(aNorm.xyz);
 
     gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
     sType2 = usType;
+    color = vColor;
 }
 </script>
 
@@ -47,15 +53,14 @@ uniform vec4 ulightAmbient;
 uniform vec4 ulightSpecular;
 uniform vec4 ulightDiffuse;
 uniform float uShininess;
+in vec4 color;
 uniform sampler2D uTextureMap;
 in float sType2;
 in vec3 N, L, E;
 in float s, t;
 out vec4 fColor;
 
-void main()
-{
-    
+void main() {
     vec3 H = normalize( L + E );
     vec4 ambient = uAmbientProduct;
 
@@ -83,10 +88,10 @@ void main()
     if( dot(L, N) < 0.0 ) specular2 = vec4(0.0, 0.0, 0.0, 1.0);
 
     if(sType2 == 0.0){
-        fColor  = vec4( 0.0, 0.0, 1.0, 1.0 );
+        fColor = color;
     }
     else if (sType2 == 1.0){
-        fColor = ambient + diffuse +specular;
+        fColor = ambient + diffuse + specular;
         fColor.a = 1.0;
     }
     else{
@@ -121,6 +126,7 @@ void main()
 <canvas id="gl-canvas" width="512" height="512">
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
-<img id = "texImage" src = "earth.png" crossorigin = "anonymous" hidden></img>
+<img id = "earthImg" src = "earth.png" crossorigin = "anonymous" hidden></img>
+<img id = "moonImg" src = "moon.jpg" crossorigin = "anonymous" hidden></img>
 </body>
 </html>
