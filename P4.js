@@ -2,17 +2,21 @@ var canvas;
 var gl;
 var program;
 
+var earthImg;
+var moonImg;
+
 var numTimesToSubdivide = 3;
 var image;
 var index = 0;
 var positionsArray = [];
+var colorsArray = [];
 var normalsArray = [];
-var sType = 0.0;
-var near = -10;
-var far = 10;
+var sType = 1.0;
+var near = -40;
+var far = 40;
 var radius = 1.5;
-var theta  = 0.0;
-var phi    = 0.0;
+var theta = 0.0;
+var phi = 0.0;
 var dr = 15.0 * Math.PI/180.0;
 
 var left = -3.0;
@@ -25,7 +29,19 @@ var vb = vec4(0.0, 0.942809, 0.333333, 1);
 var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
 var vd = vec4(0.816497, -0.471405, 0.333333,1);
 
-var lightPosition = vec4(1.0, 1.0, 1.0, 0.0);
+var earthX = (va[0] + vb[0] + vc[0], + vd[0]) / 4;
+var earthY = (va[1] + vb[1] + vc[1], + vd[1]) / 4;
+var earthZ = (va[2] + vb[2] + vc[2], + vd[2]) / 4;
+
+var earthDia;
+var earthRad;
+var earthTheta = 0.0;
+var earchPhi = 0.0;
+var moonRad;
+var moonTheta = 0.0;
+var moonPhi = 0.0;
+
+var lightPosition = vec4(-1.0, 0.0, 0.0, 0.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
 var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
@@ -35,45 +51,52 @@ var materialDiffuse = vec4(0.0, 0.0, 0.8, 1.0);
 var materialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 var materialShininess = 20.0;
 
+var moonMaterialAmbient = vec4(0.5, 0.5, 0.5, 1.0);
+var moonMaterialDiffuse = vec4(0.8, 0.8, 0.8, 1.0);
+var moonMaterialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
+var moonMaterialShininess = 30.0;
+
 var ctm;
 var ambientColor, diffuseColor, specularColor;
+var ambientProduct, specularProduct, diffuseProduct;
+var moonAmbientProduct, moonSpecularProduct, moonDiffuseProduct;
 
 var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
 
 var nMatrix, nMatrixLoc;
 
-var eye;
+var colorEarth = vec3(0.0, 0.0, 0.8);
+
+var eye = vec3(0.0, 0.0, 1.5);
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
 
 function configureTexture( imag ) {
     texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB,
-         gl.RGB, gl.UNSIGNED_BYTE, imag);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, imag);
     gl.generateMipmap(gl.TEXTURE_2D);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
-                      gl.NEAREST_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
     gl.uniform1i(gl.getUniformLocation(program, "uTexture"), 0);
 }
 
 function triangle(a, b, c) {
+    positionsArray.push(a);
+    positionsArray.push(b);
+    positionsArray.push(c);
+    
+    // normals are vectors
 
-     positionsArray.push(a);
-     positionsArray.push(b);
-     positionsArray.push(c);
-
-          // normals are vectors
-
-     normalsArray.push(vec4(a[0],a[1], a[2], 0.0));
-     normalsArray.push(vec4(b[0],b[1], b[2], 0.0));
-     normalsArray.push(vec4(c[0],c[1], c[2], 0.0));
-
-
-     index += 3;
+    normalsArray.push(vec4(a[0],a[1], a[2], 0.0));
+    normalsArray.push(vec4(b[0],b[1], b[2], 0.0));
+    normalsArray.push(vec4(c[0],c[1], c[2], 0.0));
+    colorsArray.push(vec3(0, 0, 0.8));
+    colorsArray.push(vec3(0, 0, 0.8));
+    colorsArray.push(vec3(0, 0, 0.8));
+    index += 3;
 }
 
 
@@ -106,33 +129,89 @@ function tetrahedron(a, b, c, d, n) {
     divideTriangle(a, c, d, n);
 }
 
+function triangle2(a, b, c) {
+    positionsArray.push(a);
+    positionsArray.push(b);
+    positionsArray.push(c);
+    
+    // normals are vectors
+
+    normalsArray.push(vec4(a[0],a[1], a[2], 0.0));
+    normalsArray.push(vec4(b[0],b[1], b[2], 0.0));
+    normalsArray.push(vec4(c[0],c[1], c[2], 0.0));
+    colorsArray.push(vec3(0.8, 0.8, 0.8));
+    colorsArray.push(vec3(0.8, 0.8, 0.8));
+    colorsArray.push(vec3(0.8, 0.8, 0.8));
+}
+
+
+function divideTriangle2(a, b, c, count) {
+    if (count > 0) {
+
+        var ab = mix( a, b, 0.5);
+        var ac = mix( a, c, 0.5);
+        var bc = mix( b, c, 0.5);
+
+        ab = normalize(ab, true);
+        ac = normalize(ac, true);
+        bc = normalize(bc, true);
+
+        divideTriangle2(a, ab, ac, count - 1);
+        divideTriangle2(ab, b, bc, count - 1);
+        divideTriangle2(bc, c, ac, count - 1);
+        divideTriangle2(ab, bc, ac, count - 1);
+    }
+    else {
+        triangle2(a, b, c);
+    }
+}
+
+
+function tetrahedron2(a, b, c, d, n) {
+    divideTriangle2(a, b, c, n);
+    divideTriangle2(d, c, b, n);
+    divideTriangle2(a, d, b, n);
+    divideTriangle2(a, c, d, n);
+}
+
 
 window.onload = function init() {
-
     canvas = document.getElementById("gl-canvas");
 
     gl = canvas.getContext('webgl2');
     if (!gl) alert("WebGL 2.0 isn't available");
 
-
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
     gl.enable(gl.DEPTH_TEST);
-
+    
     //
     //  Load shaders and initialize attribute buffers
     //
     program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
 
-
-    var ambientProduct = mult(lightAmbient, materialAmbient);
-    var diffuseProduct = mult(lightDiffuse, materialDiffuse);
-    var specularProduct = mult(lightSpecular, materialSpecular);
-
+    ambientProduct = mult(lightAmbient, materialAmbient);
+    diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    specularProduct = mult(lightSpecular, materialSpecular);
+    moonAmbientProduct = mult(lightAmbient, moonMaterialAmbient);
+    moonDiffuseProduct = mult(lightDiffuse, moonMaterialDiffuse);
+    moonSpecularProduct = mult(lightSpecular, moonMaterialSpecular);
 
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
+    tetrahedron2(va, vb, vc, vd, numTimesToSubdivide);
+
+    moonRad = 4;
+    radius = moonRad * 4;
+    cBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW);
+
+    // Associate out shader variables with our data buffer
+    vColor = gl.getAttribLocation(program, "vColor");
+    gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vColor);
 
     var nBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
@@ -140,8 +219,7 @@ window.onload = function init() {
 
     var normalLoc = gl.getAttribLocation(program, "aNormal");
     gl.vertexAttribPointer(normalLoc, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray( normalLoc);
-
+    gl.enableVertexAttribArray(normalLoc);
 
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -153,7 +231,6 @@ window.onload = function init() {
 
     modelViewMatrixLoc = gl.getUniformLocation(program, "uModelViewMatrix");
     projectionMatrixLoc = gl.getUniformLocation(program, "uProjectionMatrix");
-    nMatrixLoc = gl.getUniformLocation(program, "uNormalMatrix");
 
     document.getElementById("Button0").onclick = function(){radius *= 2.0;};
     document.getElementById("Button1").onclick = function(){radius *= 0.5;};
@@ -162,7 +239,15 @@ window.onload = function init() {
     document.getElementById("Button4").onclick = function(){phi += dr;};
     document.getElementById("Button5").onclick = function(){phi -= dr;};
 
-    document.getElementById("Controls").onclick = function( event) {
+    // Texture stuff
+    earthImg = document.getElementById("earthImg");
+    moonImg = document.getElementById("moonImg");
+
+    texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    // Controlls
+    document.getElementById("Controls").onclick = function(event) {
         switch(event.target.index) {
           case 0:
             sType = 0.0;
@@ -175,64 +260,89 @@ window.onload = function init() {
          case 2:
             sType = 2.0;
             break;
-       }
-       normalsArray = [];
-       tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
-       nBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
-        normalLoc = gl.getAttribLocation(program, "aNormal");
-        gl.vertexAttribPointer(normalLoc, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(normalLoc); //senidng normals over
-        if(sType == 2.0){
-            image = document.getElementById("texImage");
-            configureTexture(image);
         }
     };
 
-
-    gl.uniform4fv(gl.getUniformLocation(program,
-       "uAmbientProduct"),flatten(ambientProduct));
-    gl.uniform4fv(gl.getUniformLocation(program,
-       "uDiffuseProduct"),flatten(diffuseProduct));
-    gl.uniform4fv(gl.getUniformLocation(program,
-       "uSpecularProduct"),flatten(specularProduct));
-    gl.uniform4fv(gl.getUniformLocation(program,
-       "uLightPosition"),flatten(lightPosition));
+    gl.uniform4fv(gl.getUniformLocation(program, "uAmbientProduct"),flatten(ambientProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "uDiffuseProduct"),flatten(diffuseProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "uSpecularProduct"),flatten(specularProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "uLightPosition"),flatten(lightPosition));
+    gl.uniform1f(gl.getUniformLocation(program, "uShininess"),materialShininess);
     gl.uniform4fv(gl.getUniformLocation(program,
         "ulightSpecular"),flatten(lightSpecular));
     gl.uniform4fv(gl.getUniformLocation(program,
         "ulightAmbient"),flatten(lightAmbient));
     gl.uniform4fv(gl.getUniformLocation(program,
         "ulightDiffuse"),flatten(lightDiffuse));
-    gl.uniform1f(gl.getUniformLocation(program,
-       "uShininess"),materialShininess);
     render();
 }
 
 
 function render() {
-
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    eye = vec3(radius*Math.sin(theta)*Math.cos(phi),
-        radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
-
-    modelViewMatrix = lookAt(eye, at , up);
+    earthTheta += 15.0 * Math.PI/180.0;
+    moonTheta += 0.75 * Math.PI/180.0;
+    
+    eye = vec3(0, 0, 1.5);
+    
+    modelViewMatrix = lookAt(eye, at, up);
     projectionMatrix = ortho(left, right, bottom, ytop, near, far);
 
-    nMatrix =normalMatrix(modelViewMatrix, true );
-
-    gl.uniform3fv( gl.getUniformLocation(program,
-        "uEyePosition"), eye );
-
-    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
+    gl.uniform3fv( gl.getUniformLocation(program, "uEyePosition"), eye );
+    
+    ctm = mat4();
+    ctm = mult(ctm, rotateY(earthTheta));
+    var earthView = mult(modelViewMatrix, ctm);
+   
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(earthView));
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
-    gl.uniformMatrix3fv(nMatrixLoc, false, flatten(nMatrix) );
     gl.uniform1f( gl.getUniformLocation(program,"usType"),sType );
+  
+    // Set earth image
+    if (sType == 2) {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, earthImg);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.uniform1i(gl.getUniformLocation(program, "uTexture"), 0);
+    }
 
-    for( var i=0; i<index; i+=3)
+    if(sType == 1){
+        gl.uniform4fv(gl.getUniformLocation(program, "uAmbientProduct"),flatten(ambientProduct));
+        gl.uniform4fv(gl.getUniformLocation(program, "uDiffuseProduct"),flatten(diffuseProduct));
+        gl.uniform4fv(gl.getUniformLocation(program, "uSpecularProduct"),flatten(specularProduct));
+        gl.uniform1f(gl.getUniformLocation(program, "uShininess"),materialShininess);
+    }
+
+    for(var i=0; i<index; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 ); //Earth is 768 vertices
+ 
+    ctm = mat4();
+    ctm = mult(ctm, scale(0.25, 0.25, 0.25));
+    ctm = mult(ctm, rotateY(moonTheta));
+    ctm = mult(ctm, translate(moonRad, 0, moonRad));
+    var moonView = mult(modelViewMatrix, ctm);
+    
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(moonView));
+    
+    // Set moon image
+    if (sType == 2) {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, moonImg);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.uniform1i(gl.getUniformLocation(program, "uTexture"), 0);
+    }
 
+    if(sType == 1){
+        gl.uniform4fv(gl.getUniformLocation(program, "uAmbientProduct"),flatten(moonAmbientProduct));
+        gl.uniform4fv(gl.getUniformLocation(program, "uDiffuseProduct"),flatten(moonDiffuseProduct));
+        gl.uniform4fv(gl.getUniformLocation(program, "uSpecularProduct"),flatten(moonSpecularProduct));
+        gl.uniform1f(gl.getUniformLocation(program, "uShininess"),materialShininess);
+    }
+
+    for(var i=768; i<1536; i+=3)
+        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Moon is 768 vertices
+    
     requestAnimationFrame(render);
 }
