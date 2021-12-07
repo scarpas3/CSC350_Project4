@@ -196,7 +196,6 @@ window.onload = function init() {
     moonImg = document.getElementById("moonImg");
 
     texture = gl.createTexture();
-    gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
     // Controlls
