@@ -1,7 +1,8 @@
 var canvas;
 var gl;
 var program;
-
+var earthRate = 15;
+var moonRate = 0.75;
 var earthImg;
 var moonImg;
 
@@ -18,7 +19,7 @@ var radius = 16;
 var theta = 0.0;
 var phi = 0.0;
 var dr = 15.0 * Math.PI/180.0;
-
+var cameraFlag = 1.0;
 var left = -3.0;
 var right = 3.0;
 var ytop =3.0;
@@ -35,11 +36,9 @@ var earthZ = (va[2] + vb[2] + vc[2], + vd[2]) / 4;
 
 var earthDia;
 var earthRad;
-var earthTheta = 0.0;
-var earchPhi = 0.0;
 var moonRad;
-var moonTheta = 0.0;
-var moonPhi = 0.0;
+var earthTheta = earthRate * Math.PI/180.0;
+var moonTheta = moonRate * Math.PI/180.0;
 
 var lightPosition = vec4(-1.0, 0.0, 0.0, 0.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
@@ -218,12 +217,22 @@ window.onload = function init() {
     modelViewMatrixLoc = gl.getUniformLocation(program, "uModelViewMatrix");
     projectionMatrixLoc = gl.getUniformLocation(program, "uProjectionMatrix");
 
-    document.getElementById("Button0").onclick = function(){radius *= 2.0;};
-    document.getElementById("Button1").onclick = function(){radius *= 0.5;};
-    document.getElementById("Button2").onclick = function(){theta += dr;};
-    document.getElementById("Button3").onclick = function(){theta -= dr;};
-    document.getElementById("Button4").onclick = function(){phi += dr;};
-    document.getElementById("Button5").onclick = function(){phi -= dr;};
+    document.getElementById("Button0").onclick = function(){cameraFlag = 1.0;};
+    document.getElementById("Button1").onclick = function(){cameraFlag = 0.0;};
+    document.getElementById("Button2").onclick = function(){
+        moonRate *= 2.0;
+        earthRate *= 2.0;
+    };
+    document.getElementById("Button3").onclick = function(){
+        moonRate = moonRate / 2.0;
+        earthRate = earthRate / 2.0;
+    };
+
+    document.getElementById("Button4").onclick = function(){
+        moonTheta = moonTheta + (0.75 * Math.PI/180.0);
+        earthTheta = earthTheta + (15 * Math.PI/180.0);
+    };
+
 
     // Texture stuff
     earthImg = document.getElementById("earthImg");
@@ -266,10 +275,14 @@ window.onload = function init() {
 
 function render() {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    earthTheta += 15.0 * Math.PI/180.0;
-    moonTheta += 0.75 * Math.PI/180.0;
-    
-    eye = vec3(0, 0, 1.5);
+    earthTheta += earthRate * Math.PI/180.0;
+    moonTheta += moonRate * Math.PI/180.0;
+    if (cameraFlag == 1.0){
+        eye = vec3(0, 0, 1.5);
+    }
+    else if(cameraFlag == 0.0){
+        eye = vec3(0, 60.0 * Math.PI/180.0, 1.5);
+    }
     
     modelViewMatrix = lookAt(eye, at, up);
     projectionMatrix = ortho(left, right, bottom, ytop, near, far);
@@ -301,7 +314,7 @@ function render() {
     }
 
     for(var i=0; i<index; i+=3)
-        gl.drawArrays( gl.TRIANGLES, i, 3 );
+        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Earth is 768 vertices
  
     ctm = mat4();
     ctm = mult(ctm, scale(0.25, 0.25, 0.25));
@@ -328,7 +341,7 @@ function render() {
     }
 
     for(var i=index; i<index*2; i+=3)
-        gl.drawArrays( gl.TRIANGLES, i, 3 ); 
+        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Moon is 768 vertices
     
     requestAnimationFrame(render);
 }
