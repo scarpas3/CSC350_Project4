@@ -1,25 +1,22 @@
 var canvas;
 var gl;
 var program;
-var earthRate = 15;
-var moonRate = 0.75;
-var earthImg;
+var earthRate = 15; //rate (in degrees) at which earth rotates
+var moonRate = 0.75; //rate (in degrees) at which moon rotates around the earth
+var earthImg; //texture image variables for earth and moon
 var moonImg;
 
-var numTimesToSubdivide = 4;
-var image;
-var index = 0;
-var positionsArray = [];
-var colorsArray = [];
-var normalsArray = [];
-var sType = 1.0;
+var numTimesToSubdivide = 4; //for divideTriangle function
+var index = 0; //tracks number of variables in a sphere
+var positionsArray = []; //array for positions
+var colorsArray = []; //array for colors
+var normalsArray = []; //array for normals
+var sType = 1.0; //type of shading, with Phong as the default
 var near = -40;
 var far = 40;
 var radius;
-var theta = 0.0;
-var phi = 0.0;
 var dr = 15.0 * Math.PI/180.0;
-var cameraFlag = 1.0;
+var cameraFlag = 1.0; //type of camera, with level as the default
 var left = -3.0;
 var right = 3.0;
 var ytop =3.0;
@@ -34,26 +31,25 @@ var earthX = (va[0] + vb[0] + vc[0], + vd[0]) / 4;
 var earthY = (va[1] + vb[1] + vc[1], + vd[1]) / 4;
 var earthZ = (va[2] + vb[2] + vc[2], + vd[2]) / 4;
 
-var earthTheta = earthRate * Math.PI/180.0;
-var moonTheta = moonRate * Math.PI/180.0;
+var earthTheta = earthRate * Math.PI/180.0;//theta for Earth
+var moonTheta = moonRate * Math.PI/180.0; //theta for moon
 
 var lightPosition = vec4(-10.0, 0.0, 0.0, 0.0);
-var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
+var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0); //light properties for the light source
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
 var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 
-var materialAmbient = vec4(0.0, 0.0, 1.0, 1.0);
-var materialDiffuse = vec4(0.0, 0.0, 0.8, 1.0);
+var materialAmbient = vec4(0.0, 0.8, 1.0, 1.0);
+var materialDiffuse = vec4(0.0, 0.0, 0.8, 1.0); //light properties for Earth
 var materialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 var materialShininess = 20.0;
 
 var moonMaterialAmbient = vec4(0.5, 0.5, 0.5, 1.0);
-var moonMaterialDiffuse = vec4(0.8, 0.8, 0.8, 1.0);
+var moonMaterialDiffuse = vec4(0.8, 0.8, 0.8, 1.0); //light properties for moon
 var moonMaterialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 var moonMaterialShininess = 30.0;
 
 var ctm;
-var ambientColor, diffuseColor, specularColor;
 var ambientProduct, specularProduct, diffuseProduct;
 var moonAmbientProduct, moonSpecularProduct, moonDiffuseProduct;
 
@@ -62,7 +58,10 @@ var modelViewMatrixLoc, projectionMatrixLoc;
 
 var nMatrix, nMatrixLoc;
 
-var eye = vec3(0.0, 0.0, 0.0);
+var starwars = false;
+var spaceImg;
+
+var eye = vec3(0.0, 0.0, 1.5);
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
 
@@ -73,6 +72,7 @@ function planetDiameter(a, b, c) {
     
     earthRad = Math.sqrt(Math.pow(norm[0], 2) + Math.pow(norm[1], 2) + Math.pow(norm[2], 2));
     earthDia = 2*earthRad;
+    this.console.log(earthDia);
 }
 
 function triangle(a, b, c) {
@@ -80,8 +80,6 @@ function triangle(a, b, c) {
     positionsArray.push(b);
     positionsArray.push(c);
     
-    // normals are vectors
-
     normalsArray.push(vec4(a[0],a[1], a[2], 0.0));
     normalsArray.push(vec4(b[0],b[1], b[2], 0.0));
     normalsArray.push(vec4(c[0],c[1], c[2], 0.0));
@@ -172,7 +170,7 @@ window.onload = function init() {
     if (!gl) alert("WebGL 2.0 isn't available");
 
     gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
     gl.enable(gl.DEPTH_TEST);
     
@@ -237,13 +235,12 @@ window.onload = function init() {
         earthRate = earthRate / 2.0;
     };
 
-    document.getElementById("Button4").onclick = function(){
-        moonTheta = moonTheta + moonRate * (0.75 * Math.PI/180.0);
-        earthTheta = earthTheta + moonRate * (15 * Math.PI/180.0);
-    };
-
 
     // Texture stuff
+    document.getElementById("Button5").onclick = function(){
+        earthImg = document.getElementById("alderaanImg");
+        moonImg = document.getElementById("deathstarImg");
+    }
     earthImg = document.getElementById("earthImg");
     moonImg = document.getElementById("moonImg");
 
@@ -284,6 +281,7 @@ window.onload = function init() {
 
 function render() {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.clearColor(0, 0, 0, 0.95);
     earthTheta += earthRate * Math.PI/180.0;
     moonTheta += moonRate * Math.PI/180.0;
     
@@ -324,7 +322,7 @@ function render() {
     }
 
     for(var i=0; i<index; i+=3)
-        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Earth is 768 vertices
+        gl.drawArrays( gl.TRIANGLES, i, 3 ); 
  
     ctm = mat4();
     ctm = mult(ctm, scale(0.25, 0.25, 0.25));
@@ -351,7 +349,7 @@ function render() {
     }
 
     for(var i=index; i<index*2; i+=3)
-        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Moon is 768 vertices
+        gl.drawArrays( gl.TRIANGLES, i, 3 ); 
     
     requestAnimationFrame(render);
 }
