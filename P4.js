@@ -15,7 +15,7 @@ var normalsArray = [];
 var sType = 1.0;
 var near = -40;
 var far = 40;
-var radius = 16;
+var radius;
 var theta = 0.0;
 var phi = 0.0;
 var dr = 15.0 * Math.PI/180.0;
@@ -34,13 +34,10 @@ var earthX = (va[0] + vb[0] + vc[0], + vd[0]) / 4;
 var earthY = (va[1] + vb[1] + vc[1], + vd[1]) / 4;
 var earthZ = (va[2] + vb[2] + vc[2], + vd[2]) / 4;
 
-var earthDia;
-var earthRad;
-var moonRad;
 var earthTheta = earthRate * Math.PI/180.0;
 var moonTheta = moonRate * Math.PI/180.0;
 
-var lightPosition = vec4(-1.0, 0.0, 0.0, 0.0);
+var lightPosition = vec4(-10.0, 0.0, 0.0, 0.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
 var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
@@ -65,11 +62,18 @@ var modelViewMatrixLoc, projectionMatrixLoc;
 
 var nMatrix, nMatrixLoc;
 
-var eyeRad = moonRad * 4.0;
-
-var eye = vec3(0.0, 0.0, eyeRad);
+var eye = vec3(0.0, 0.0, 0.0);
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
+
+function planetDiameter(a, b, c) {
+    var t1 = subtract(b, a);
+    var t2 = subtract(c, a);
+    var norm = normalize(cross(t2, t1));
+    
+    earthRad = Math.sqrt(Math.pow(norm[0], 2) + Math.pow(norm[1], 2) + Math.pow(norm[2], 2));
+    earthDia = 2*earthRad;
+}
 
 function triangle(a, b, c) {
     positionsArray.push(a);
@@ -86,7 +90,6 @@ function triangle(a, b, c) {
     colorsArray.push(vec3(0, 0, 0.8));
     index += 3;
 }
-
 
 function divideTriangle(a, b, c, count) {
     if (count > 0) {
@@ -164,7 +167,6 @@ function tetrahedron2(a, b, c, d, n) {
 
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
-    console.log(earthTheta);
 
     gl = canvas.getContext('webgl2');
     if (!gl) alert("WebGL 2.0 isn't available");
@@ -190,8 +192,12 @@ window.onload = function init() {
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
     tetrahedron2(va, vb, vc, vd, numTimesToSubdivide);
 
-    moonRad = 4;
+    planetDiameter(va, vb, vc);
+
+    moonRad = 4 * earthDia;
     radius = moonRad * 4;
+    lightPosition[0] = -1 * radius;
+
     cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW);
@@ -282,10 +288,10 @@ function render() {
     moonTheta += moonRate * Math.PI/180.0;
     
     if (cameraFlag == 1.0){
-        eye = vec3(0, 0, 1.5);
+        eye = vec3(0, 0, radius);
     }
     else if(cameraFlag == 0.0){
-        eye = vec3(0, 60.0 * Math.PI/180.0, 1.5);
+        eye = vec3(0, Math.sin(60 * Math.PI/180) * radius, Math.cos(60 * Math.PI/180) * radius);
     }
     
     modelViewMatrix = lookAt(eye, at, up);
