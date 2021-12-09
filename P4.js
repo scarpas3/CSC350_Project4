@@ -62,6 +62,9 @@ var modelViewMatrixLoc, projectionMatrixLoc;
 
 var nMatrix, nMatrixLoc;
 
+var starwars = false;
+var spaceImg;
+
 var eye = vec3(0.0, 0.0, 0.0);
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
@@ -244,6 +247,10 @@ window.onload = function init() {
 
 
     // Texture stuff
+    document.getElementById("Button5").onclick = function(){
+        earthImg = document.getElementById("alderaanImg");
+        moonImg = document.getElementById("deathstarImg");
+    }
     earthImg = document.getElementById("earthImg");
     moonImg = document.getElementById("moonImg");
 
@@ -284,6 +291,7 @@ window.onload = function init() {
 
 function render() {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.clearColor(0, 0, 0, 0.95);
     earthTheta += earthRate * Math.PI/180.0;
     moonTheta += moonRate * Math.PI/180.0;
     
