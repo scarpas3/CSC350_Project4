@@ -17,6 +17,7 @@ vec4 aNorm;
 out float s, t;
 in vec4 vColor;
 out vec4 color;
+
 void main() {
 
     // check for directional light
@@ -30,7 +31,7 @@ void main() {
 
     L = normalize( uLightPosition.xyz - aPos.xyz );
 
-    E = normalize(uEyePosition - aPosition.xyz);
+    E = normalize(uEyePosition - aPos.xyz);
 
     aNorm = uModelViewMatrix * aNormal;
     N = normalize(aNorm.xyz);
@@ -39,6 +40,7 @@ void main() {
     sType2 = usType;
     color = vColor;
 }
+
 </script>
 
 <script id="fragment-shader" type="x-shader/x-fragment">

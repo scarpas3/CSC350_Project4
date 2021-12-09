@@ -65,7 +65,9 @@ var modelViewMatrixLoc, projectionMatrixLoc;
 
 var nMatrix, nMatrixLoc;
 
-var eye = vec3(0.0, 0.0, 1.5);
+var eyeRad = moonRad * 4.0;
+
+var eye = vec3(0.0, 0.0, eyeRad);
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
 
@@ -162,6 +164,7 @@ function tetrahedron2(a, b, c, d, n) {
 
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
+    console.log(earthTheta);
 
     gl = canvas.getContext('webgl2');
     if (!gl) alert("WebGL 2.0 isn't available");
@@ -229,8 +232,8 @@ window.onload = function init() {
     };
 
     document.getElementById("Button4").onclick = function(){
-        moonTheta = moonTheta + (0.75 * Math.PI/180.0);
-        earthTheta = earthTheta + (15 * Math.PI/180.0);
+        moonTheta = moonTheta + moonRate * (0.75 * Math.PI/180.0);
+        earthTheta = earthTheta + moonRate * (15 * Math.PI/180.0);
     };
 
 
@@ -277,6 +280,7 @@ function render() {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     earthTheta += earthRate * Math.PI/180.0;
     moonTheta += moonRate * Math.PI/180.0;
+    
     if (cameraFlag == 1.0){
         eye = vec3(0, 0, 1.5);
     }
