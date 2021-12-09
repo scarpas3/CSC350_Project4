@@ -63,7 +63,6 @@ var modelViewMatrixLoc, projectionMatrixLoc;
 var nMatrix, nMatrixLoc;
 
 var starwars = false;
-var spaceImg;
 
 var eye = vec3(0.0, 0.0, 0.0);
 var at = vec3(0.0, 0.0, 0.0);
