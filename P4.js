@@ -39,23 +39,23 @@ var moonTheta = moonRate * Math.PI/180.0;
 
 var lightPosition = vec4(-10.0, 0.0, 0.0, 0.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
-var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
+var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0); //light source properties
 var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 
 var materialAmbient = vec4(0.0, 0.0, 1.0, 1.0);
 var materialDiffuse = vec4(0.0, 0.0, 0.8, 1.0);
-var materialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
+var materialSpecular = vec4(1.0, 1.0, 1.0, 1.0); //properties for earth
 var materialShininess = 20.0;
 
 var moonMaterialAmbient = vec4(0.5, 0.5, 0.5, 1.0);
-var moonMaterialDiffuse = vec4(0.8, 0.8, 0.8, 1.0);
+var moonMaterialDiffuse = vec4(0.8, 0.8, 0.8, 1.0); //properties for moon
 var moonMaterialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 var moonMaterialShininess = 30.0;
 
 var ctm, ctmLoc;
 var ambientColor, diffuseColor, specularColor;
 var ambientProduct, specularProduct, diffuseProduct;
-var moonAmbientProduct, moonSpecularProduct, moonDiffuseProduct;
+var moonAmbientProduct, moonSpecularProduct, moonDiffuseProduct; 
 
 var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
@@ -73,7 +73,7 @@ var up = vec3(0.0, 1.0, 0.0);
 function planetDiameter(a, b, c) {
     var t1 = subtract(b, a);
     var t2 = subtract(c, a);
-    var norm = normalize(cross(t2, t1));
+    var norm = normalize(cross(t2, t1)); //planet diameter calculator
     
     earthRad = Math.sqrt(Math.pow(norm[0], 2) + Math.pow(norm[1], 2) + Math.pow(norm[2], 2));
     earthDia = 2*earthRad;
@@ -81,7 +81,7 @@ function planetDiameter(a, b, c) {
 
 function triangle(a, b, c) {
     positionsArray.push(a);
-    positionsArray.push(b);
+    positionsArray.push(b); //trangle function from shadedSphere.js
     positionsArray.push(c);
     
     // normals are vectors
@@ -91,7 +91,7 @@ function triangle(a, b, c) {
     normalsArray.push(vec4(c[0],c[1], c[2], 0.0));
     colorsArray.push(vec3(0, 0, 0.8));
     colorsArray.push(vec3(0, 0, 0.8));
-    colorsArray.push(vec3(0, 0, 0.8));
+    colorsArray.push(vec3(0, 0, 0.8)); //this version pushes blue to the colors array
     index += 3;
 }
 
@@ -102,12 +102,12 @@ function divideTriangle(a, b, c, count) {
         var ac = mix( a, c, 0.5);
         var bc = mix( b, c, 0.5);
 
-        ab = normalize(ab, true);
+        ab = normalize(ab, true);   //divideTriangle function from shadedSphere.js
         ac = normalize(ac, true);
         bc = normalize(bc, true);
 
         divideTriangle(a, ab, ac, count - 1);
-        divideTriangle(ab, b, bc, count - 1);
+        divideTriangle(ab, b, bc, count - 1); //recursively calls itself "numTimestoSubDivide" amount of times
         divideTriangle(bc, c, ac, count - 1);
         divideTriangle(ab, bc, ac, count - 1);
     }
@@ -132,7 +132,7 @@ function triangle2(a, b, c) {
     normalsArray.push(vec4(a[0],a[1], a[2], 0.0));
     normalsArray.push(vec4(b[0],b[1], b[2], 0.0));
     normalsArray.push(vec4(c[0],c[1], c[2], 0.0));
-    colorsArray.push(vec3(0.8, 0.8, 0.8));
+    colorsArray.push(vec3(0.8, 0.8, 0.8)); //all of the "2" functions are the same as their counterparts, they are just tailored for the moon's gray color
     colorsArray.push(vec3(0.8, 0.8, 0.8));
     colorsArray.push(vec3(0.8, 0.8, 0.8));
 }
@@ -196,7 +196,7 @@ window.onload = function init() {
 
     moonRad = 4 * earthDia;
     radius = moonRad * 4;
-    lightPosition[0] = -1 * radius;
+    lightPosition[0] = -1 * radius; //getting radius of orbit and diamater of the Earth
 
     cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
@@ -304,10 +304,10 @@ function render() {
     earthTheta += earthRate * Math.PI/180.0;
     moonTheta += moonRate * Math.PI/180.0;
     
-    if (cameraFlag == 1.0){
+    if (cameraFlag == 1.0){ //if they want the camera level
         eye = vec3(0, 0, radius);
     }
-    else if(cameraFlag == 0.0){
+    else if(cameraFlag == 0.0){ //else
         eye = vec3(0, Math.sin(60 * Math.PI/180) * radius, Math.cos(60 * Math.PI/180) * radius);
     }
     
@@ -327,7 +327,7 @@ function render() {
     gl.uniform1f( gl.getUniformLocation(program,"usType"),sType );
   
     // Set earth image
-    if (sType == 2) {
+    if (sType == 2) { //if texture
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, earthImg);
         gl.generateMipmap(gl.TEXTURE_2D);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
@@ -335,7 +335,7 @@ function render() {
         gl.uniform1i(gl.getUniformLocation(program, "uTexture"), 0);
     }
 
-    if(sType == 1){
+    if(sType == 1){ //if they want phong shading
         gl.uniform4fv(gl.getUniformLocation(program, "uAmbientProduct"),flatten(ambientProduct));
         gl.uniform4fv(gl.getUniformLocation(program, "uDiffuseProduct"),flatten(diffuseProduct));
         gl.uniform4fv(gl.getUniformLocation(program, "uSpecularProduct"),flatten(specularProduct));
@@ -343,12 +343,12 @@ function render() {
     }
 
     for(var i=0; i<index; i+=3)
-        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Earth is 768 vertices
+        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Render Earth
  
     ctm = mat4();
     ctm = mult(ctm, scale(0.25, 0.25, 0.25));
     ctm = mult(ctm, rotateY(moonTheta));
-    ctm = mult(ctm, translate(moonRad, 0, moonRad));
+    ctm = mult(ctm, translate(moonRad, 0, moonRad)); //transformations for the moon
     //var moonView = mult(modelViewMatrix, ctm);
     
     //gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(moonView));
@@ -371,7 +371,7 @@ function render() {
     }
 
     for(var i=index; i<index*2; i+=3)
-        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Moon is 768 vertices
+        gl.drawArrays( gl.TRIANGLES, i, 3 ); //Render Moon
     
     requestAnimationFrame(render);
 }
