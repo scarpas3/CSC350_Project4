@@ -1,3 +1,7 @@
+// Nola Watson & Anthony Scarpa
+// CSC 350
+// Project 4
+
 var canvas;
 var gl;
 var program;
