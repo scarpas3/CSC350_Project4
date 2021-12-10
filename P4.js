@@ -52,7 +52,7 @@ var moonMaterialDiffuse = vec4(0.8, 0.8, 0.8, 1.0);
 var moonMaterialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 var moonMaterialShininess = 30.0;
 
-var ctm;
+var ctm, ctmLoc;
 var ambientColor, diffuseColor, specularColor;
 var ambientProduct, specularProduct, diffuseProduct;
 var moonAmbientProduct, moonSpecularProduct, moonDiffuseProduct;
@@ -63,6 +63,8 @@ var modelViewMatrixLoc, projectionMatrixLoc;
 var nMatrix, nMatrixLoc;
 
 var starwars = false;
+var sound;
+var playing = false;
 
 var eye = vec3(0.0, 0.0, 0.0);
 var at = vec3(0.0, 0.0, 0.0);
@@ -114,7 +116,6 @@ function divideTriangle(a, b, c, count) {
     }
 }
 
-
 function tetrahedron(a, b, c, d, n) {
     divideTriangle(a, b, c, n);
     divideTriangle(d, c, b, n);
@@ -135,7 +136,6 @@ function triangle2(a, b, c) {
     colorsArray.push(vec3(0.8, 0.8, 0.8));
     colorsArray.push(vec3(0.8, 0.8, 0.8));
 }
-
 
 function divideTriangle2(a, b, c, count) {
     if (count > 0) {
@@ -158,14 +158,12 @@ function divideTriangle2(a, b, c, count) {
     }
 }
 
-
 function tetrahedron2(a, b, c, d, n) {
     divideTriangle2(a, b, c, n);
     divideTriangle2(d, c, b, n);
     divideTriangle2(a, d, b, n);
     divideTriangle2(a, c, d, n);
 }
-
 
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
@@ -227,6 +225,7 @@ window.onload = function init() {
 
     modelViewMatrixLoc = gl.getUniformLocation(program, "uModelViewMatrix");
     projectionMatrixLoc = gl.getUniformLocation(program, "uProjectionMatrix");
+    ctmLoc = gl.getUniformLocation(program, "uCtm");
 
     document.getElementById("Button0").onclick = function(){cameraFlag = 1.0;};
     document.getElementById("Button1").onclick = function(){cameraFlag = 0.0;};
@@ -249,6 +248,14 @@ window.onload = function init() {
     document.getElementById("Button5").onclick = function(){
         earthImg = document.getElementById("alderaanImg");
         moonImg = document.getElementById("deathstarImg");
+        sound = document.getElementById("dundunDUN");
+        if (playing == true) {
+            sound.pause();
+            playing = false;
+        } else {
+            sound.play();
+            playing = true;
+        }
     }
     earthImg = document.getElementById("earthImg");
     moonImg = document.getElementById("moonImg");
@@ -261,14 +268,17 @@ window.onload = function init() {
         switch(event.target.index) {
           case 0:
             sType = 0.0;
+            document.getElementById("Button5").style.visibility = 'hidden';
             break;
 
          case 1:
             sType = 1.0;
+            document.getElementById("Button5").style.visibility = 'hidden';
             break;
 
          case 2:
             sType = 2.0;
+            document.getElementById("Button5").style.visibility = 'visible';
             break;
         }
     };
@@ -308,10 +318,12 @@ function render() {
     
     ctm = mat4();
     ctm = mult(ctm, rotateY(earthTheta));
-    var earthView = mult(modelViewMatrix, ctm);
+    //var earthView = mult(modelViewMatrix, ctm);
    
-    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(earthView));
+    //gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(earthView));
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
+    gl.uniformMatrix4fv(ctmLoc, false, flatten(ctm));
     gl.uniform1f( gl.getUniformLocation(program,"usType"),sType );
   
     // Set earth image
@@ -337,9 +349,10 @@ function render() {
     ctm = mult(ctm, scale(0.25, 0.25, 0.25));
     ctm = mult(ctm, rotateY(moonTheta));
     ctm = mult(ctm, translate(moonRad, 0, moonRad));
-    var moonView = mult(modelViewMatrix, ctm);
+    //var moonView = mult(modelViewMatrix, ctm);
     
-    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(moonView));
+    //gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(moonView));
+    gl.uniformMatrix4fv(ctmLoc, false, flatten(ctm));
     
     // Set moon image
     if (sType == 2) {

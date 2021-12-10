@@ -10,6 +10,7 @@ out vec3 N, L, E;
 out float sType2;
 uniform mat4 uModelViewMatrix;
 uniform mat4 uProjectionMatrix;
+uniform mat4 uCtm;
 uniform vec4 uLightPosition;
 uniform vec3 uEyePosition;
 vec4 aPos;
@@ -21,7 +22,7 @@ out vec4 color;
 void main() {
     float pi = acos(0.0);
 
-    aPos = uModelViewMatrix * aPosition;
+    aPos = uCtm * aPosition;
     
     s = 0.5*acos(aPosition.x)/pi;
     t = 0.5 - 0.5*asin(aPosition.y/sqrt(1.0-aPosition.x*aPosition.x))/pi;
@@ -30,10 +31,10 @@ void main() {
 
     E = normalize(uEyePosition - aPos.xyz);
 
-    aNorm = uModelViewMatrix * aNormal;
+    aNorm = uCtm * aNormal;
     N = normalize(aNorm.xyz);
 
-    gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
+    gl_Position = uProjectionMatrix * uModelViewMatrix * uCtm * aPosition;
     sType2 = usType;
     color = vColor;
 }
@@ -120,7 +121,7 @@ void main() {
         <option value="1">Phong Shading</option>
         <option value="2">Textures + Phong Shading</option>
     </select>
-    <button id = "Button5">Starwars</button>
+    <button id = "Button5" style="visibility: hidden;">Starwars</button>
 
 
     <canvas id = "gl-canvas" width = "512" height = "512">
@@ -128,8 +129,9 @@ void main() {
     </canvas>
     <img id = "earthImg" src = "earth.png" crossorigin = "anonymous" hidden></img>
     <img id = "moonImg" src = "moon.png" crossorigin = "anonymous" hidden></img>
-    <img id = "alderaanImg" src = "alderaan.jpg" crossorigin = "anonymous" hidden></img>
+    <img id = "alderaanImg" src = "alderaan.png" crossorigin = "anonymous" hidden></img>
     <img id = "deathstarImg" src = "deathstar.png" crossorigin = "anonymous" hidden></img>
     <img id = "spaceImg" src = "space.jpg" crossorigin = "anonymous" hidden></img>
+    <audio id = "dundunDUN" src = "dun-dun-DUN.mp3" hidden></audio>
 </body>
 </html>
